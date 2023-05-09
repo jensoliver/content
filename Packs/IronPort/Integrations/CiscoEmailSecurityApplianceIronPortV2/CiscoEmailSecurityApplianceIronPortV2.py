@@ -5,7 +5,7 @@ from CommonServerPython import *  # noqa: F401
 import uuid
 
 
-JWT_TOKEN_EXPIRATION_PERIOD = 30
+JWT_TOKEN_EXPIRATION_PERIOD = 15
 DEFAULT_FETCH = 50
 TIMESTAMP_FORMAT = "%d %b %Y %H:%M:%S (%Z +00:00)"
 QUARANTINE_TIMESTAMP_FORMAT = "%d %b %Y %H:%M (%Z +00:00)"
