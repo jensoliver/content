@@ -60,7 +60,7 @@ def get_http_client_with_proxy(disable_ssl):
     proxies = handle_proxy()
     if not proxies.get('https', True):
         raise Exception('https proxy value is empty. Check Demisto server configuration')
-    https_proxy = proxies['https']
+    https_proxy = proxies.get('https')
     if not https_proxy.startswith('https') and not https_proxy.startswith('http'):
         https_proxy = 'https://' + https_proxy
     parsed_proxy = urllib.parse.urlparse(https_proxy)
@@ -81,10 +81,10 @@ def get_credentials(credentials, scopes):
 def get_client(credentials, scopes, proxy, disable_ssl):
     credentials = get_credentials(credentials, scopes)
 
-    if proxy or disable_ssl:
-        http_client = credentials.authorize(get_http_client_with_proxy(disable_ssl))
-        return discovery.build('docs', 'v1', http=http_client)
-    return discovery.build('docs', 'v1', credentials=credentials)
+    # if proxy or disable_ssl:
+    #     http_client = credentials.authorize(get_http_client_with_proxy(disable_ssl))
+    #     return discovery.build('docs', 'v1', http=http_client)
+    return discovery.build('drive', 'v3', credentials=credentials)
 
 
 ''' COMMANDS + REQUESTS FUNCTIONS '''
@@ -341,13 +341,31 @@ def get_document(service, document_id):
     return document
 
 
+def copy_document_command(service, args: dict):
+    document_id = args['document_id']
+    copy_title = args["copy_title"]
+    res = copy_document(service, document_id, copy_title)
+    document_copy_id = res.get('id')
+    return document_copy_id
+
+
+def copy_document(service, document_id: str, copy_title: str) -> dict:
+    body = {
+        'name': copy_title
+    }
+    drive_response = service.files().copy(
+        fileId=document_id, body=body).execute()
+
+    return drive_response
+
+
 def main():
     command = demisto.command()
     args = demisto.args()
     demisto.debug('Command being called is %s' % (command))
     proxy = demisto.params().get('proxy')
     disable_ssl = demisto.params().get('insecure', False)
-    service_account_credentials = json.loads(demisto.params().get('service_account_credentials'))
+    service_account_credentials = json.loads(demisto.params().get('service_account_credentials'), strict=False)
     if command == 'test-module':
         try:
             get_client(service_account_credentials, SCOPES, proxy, disable_ssl)
@@ -366,6 +384,9 @@ def main():
 
             case 'google-docs-get-document':
                 document, human_readable_text = get_document_command(service, args)
+
+            case 'google-docs-copy-document':
+                document, human_readable_text = copy_document_command(service, args)
 
             case _:
                 return_error("Command {} does not exist".format(command))
@@ -396,5 +417,5 @@ def main():
 
 
 ''' COMMANDS MANAGER / SWITCH PANEL '''
-if __name__ == "__builtin__" or __name__ == "builtins":
+if __name__ in ('__main__', '__builtin__', 'builtins'):
     main()
