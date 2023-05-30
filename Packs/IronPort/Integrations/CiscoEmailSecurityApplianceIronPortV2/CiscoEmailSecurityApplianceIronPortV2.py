@@ -44,14 +44,14 @@ class Client(BaseClient):
         integration_context = get_integration_context()
         jwt_token = integration_context.get("jwt_token")
         jwt_token_issued_time = integration_context.get("jwt_token_issued_time", 0.0)
-        current_time = datetime.now()
+        current_time = datetime.now().timestamp()
         next_refresh = (datetime.fromtimestamp(jwt_token_issued_time)
                         + timedelta(minutes=JWT_TOKEN_EXPIRATION_PERIOD - 0.2)).timestamp()
         if force_retrieve_jwt or not jwt_token or current_time > next_refresh:
             demisto.info(f"generating JWT {force_retrieve_jwt=}.")
             jwt_token = self.retrieve_jwt_token()
             set_integration_context(
-                {"jwt_token": jwt_token, "jwt_token_issued_time": current_time.timestamp()}
+                {"jwt_token": jwt_token, "jwt_token_issued_time": current_time}
             )
         else:
             demisto.info(f"using existing JWT.")
@@ -81,13 +81,13 @@ class Client(BaseClient):
                 )
             raise e
 
-    def _http_request(self, **kwargs):
+    def _http_request(self, *args, **kwargs):
         try:
-            return super()._http_request(**kwargs)
+            return super()._http_request(*args, **kwargs)
         except DemistoException as e:
             if e.res.status_code == 401:
                 self.handle_request_headers(force_retrieve_jwt=True)
-                return super()._http_request(**kwargs)
+                return super()._http_request(*args, **kwargs)
 
     def spam_quarantine_message_search_request(
         self,
