@@ -669,8 +669,7 @@ def format_timestamp(timestamp: str, output_format: str = DATETIME_FORMAT) -> st
         try:
             datetime_res = arg_to_datetime(timestamp)
         except ValueError:
-            timestamp = timestamp.replace('GMT ', 'GMT')
-            datetime_res = arg_to_datetime(timestamp)
+            datetime_res = arg_to_datetime(timestamp.replace('GMT ', 'GMT'))
         return datetime_res.strftime(output_format)  # type: ignore
     except:
         return timestamp
@@ -1784,6 +1783,8 @@ def fetch_incidents(
                     "rawJSON": json.dumps(incident_details, ensure_ascii=False),
                 }
             )
+        else:
+            demisto.debug(f"Dropping incident {message_id=} {last_minute_incident_ids=} {start_date=} {incident_datetime=}")
 
     if incidents:
         start_time = incidents[-1].get("occurred")
